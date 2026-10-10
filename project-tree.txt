@@ -1,74 +1,88 @@
 gearloan/
-├── README.md
-├── LICENSE
-├── CONTRIBUTING.md
-├── .env.example
-├── .gitignore
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-├── manage.py
-│
-├── config/                      # Django project settings
-│   ├── __init__.py
+├── apps/
+│   ├── accounts/
+│   │   ├── management/commands/seed_roles.py
+│   │   ├── migrations/0001_initial.py
+│   │   ├── admin.py
+│   │   ├── models.py        # Role, User (AbstractUser)
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── audit/
+│   │   ├── migrations/0001_initial.py
+│   │   ├── admin.py
+│   │   ├── logger.py
+│   │   └── models.py        # AuditEvent
+│   ├── bookings/
+│   │   ├── migrations/0001_initial.py
+│   │   ├── admin.py
+│   │   ├── models.py        # Booking, ConditionLog
+│   │   ├── rules.py
+│   │   ├── services.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── courses/
+│   │   ├── importers/
+│   │   │   ├── base.py
+│   │   │   └── csv_importer.py
+│   │   ├── migrations/0001_initial.py
+│   │   ├── admin.py
+│   │   └── models.py        # Term, Course, Enrollment
+│   ├── departments/
+│   │   ├── migrations/0001_initial.py
+│   │   ├── admin.py
+│   │   ├── helpers.py
+│   │   └── models.py        # Department
+│   ├── fees/
+│   │   ├── migrations/0001_initial.py
+│   │   ├── admin.py
+│   │   ├── calculators.py
+│   │   └── models.py        # Fee
+│   ├── inventory/
+│   │   ├── importers/csv_importer.py
+│   │   ├── migrations/0001_initial.py
+│   │   ├── admin.py
+│   │   ├── models.py        # ItemType, Unit
+│   │   ├── tags.py          # asset tag generation (CEL-003 style)
+│   │   ├── urls.py
+│   │   └── views.py
+│   └── notifications/
+│       ├── templates/notifications/
+│       ├── emails.py
+│       └── tasks.py
+├── config/
+│   ├── asgi.py
 │   ├── settings.py
 │   ├── urls.py
-│   ├── wsgi.py
-│   └── asgi.py
-│
-├── apps/
-│   ├── accounts/                # users and roles
-│   │   ├── models.py            # User (student, faculty, admin)
-│   │   ├── admin.py
-│   │   ├── views.py
-│   │   └── urls.py
-│   │
-│   ├── courses/                 # courses and enrollments
-│   │   ├── models.py            # Course, Enrollment
-│   │   ├── admin.py
-│   │   └── importers/
-│   │       ├── base.py          # roster importer interface
-│   │       └── csv_importer.py  # CSV roster import
-│   │
-│   ├── inventory/               # items and reservations
-│   │   ├── models.py            # Item
-│   │   ├── admin.py
-│   │   ├── views.py
-│   │   └── urls.py
-│   │
-│   ├── bookings/                # requests, approvals, extensions
-│   │   ├── models.py            # Booking, ConditionLog
-│   │   ├── rules.py             # auto-approval and eligibility rules
-│   │   ├── services.py          # request, approve, extend, return
-│   │   ├── admin.py
-│   │   ├── views.py
-│   │   └── urls.py
-│   │
-│   ├── fees/                    # late fees and damage charges
-│   │   ├── models.py            # Fee
-│   │   ├── calculators.py       # $10/day late fee, damage charge
-│   │   └── admin.py
-│   │
-│   └── notifications/           # email
-│       ├── emails.py
-│       ├── tasks.py             # due-date reminders, overdue notices
-│       └── templates/
-│           └── notifications/
-│
+│   └── wsgi.py
+├── docs/
+│   ├── admin-guide.md
+│   ├── installing.md
+│   └── roster-import.md
+├── static/.gitkeep
 ├── templates/
-│   ├── base.html
-│   ├── borrower/                # borrower interface
-│   └── admin_portal/            # admin interface
-│
-├── static/
-│
+│   ├── admin_portal/
+│   └── borrower/
 ├── tests/
-│   ├── test_rules.py
+│   ├── test_asset_tags.py
+│   ├── test_bookings.py
 │   ├── test_fees.py
+│   ├── test_inventory_import.py
+│   ├── test_migrations.py
 │   ├── test_roster_import.py
-│   └── test_bookings.py
-│
-└── docs/
-    ├── installing.md
-    ├── roster-import.md
-    └── admin-guide.md
+│   └── test_rules.py
+├── .env.example
+├── .github/workflows/ci.yml
+├── .gitignore
+├── CONTRIBUTING.md
+├── docker-compose.yml
+├── Dockerfile
+├── LICENSE
+├── manage.py
+├── PATCH_NOTES_001.md
+├── PATCH_NOTES_002.md
+├── PATCH_NOTES_003.md
+├── README.md
+├── requirements.txt
+├── SECURITY.md
+├── THREAT_MODEL.md
+└── V1_PLAN.md
