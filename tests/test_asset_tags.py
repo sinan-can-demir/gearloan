@@ -11,40 +11,34 @@ def make_item_type(name="Cello", prefix="CEL"):
 class GenerateAssetTagTest(TestCase):
     def test_first_unit_gets_001(self):
         it = make_item_type()
-        tag = generate_asset_tag(it)
-        self.assertEqual(tag, "CEL-001")
+        self.assertEqual(generate_asset_tag(it), "CEL-001")
 
     def test_sequential_tags(self):
         it = make_item_type()
         Unit.objects.create(asset_tag="CEL-001", item_type=it)
         Unit.objects.create(asset_tag="CEL-002", item_type=it)
-        tag = generate_asset_tag(it)
-        self.assertEqual(tag, "CEL-003")
+        self.assertEqual(generate_asset_tag(it), "CEL-003")
 
     def test_gap_does_not_reuse_numbers(self):
         it = make_item_type()
         Unit.objects.create(asset_tag="CEL-001", item_type=it)
         Unit.objects.create(asset_tag="CEL-005", item_type=it)
-        tag = generate_asset_tag(it)
-        self.assertEqual(tag, "CEL-006")
+        self.assertEqual(generate_asset_tag(it), "CEL-006")
 
     def test_prefix_stripped_of_trailing_dash(self):
         it = make_item_type(prefix="MIC-")
-        tag = generate_asset_tag(it)
-        self.assertEqual(tag, "MIC-001")
+        self.assertEqual(generate_asset_tag(it), "MIC-001")
 
     def test_different_types_do_not_interfere(self):
         cello = make_item_type(name="Cello", prefix="CEL")
         mic = make_item_type(name="Microphone", prefix="MIC")
         Unit.objects.create(asset_tag="CEL-001", item_type=cello)
         Unit.objects.create(asset_tag="CEL-002", item_type=cello)
-        tag = generate_asset_tag(mic)
-        self.assertEqual(tag, "MIC-001")
+        self.assertEqual(generate_asset_tag(mic), "MIC-001")
 
     def test_prefix_is_uppercased(self):
         it = make_item_type(prefix="cel")
-        tag = generate_asset_tag(it)
-        self.assertEqual(tag, "CEL-001")
+        self.assertEqual(generate_asset_tag(it), "CEL-001")
 
 
 class ParseAssetTagTest(TestCase):
