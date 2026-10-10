@@ -8,9 +8,15 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "insecure-dev-key-change-me")
-DEBUG = os.environ.get("DEBUG", "True") == "True"
+_DEFAULT_SECRET = "insecure-dev-key-change-me"
+SECRET_KEY = os.environ.get("SECRET_KEY", _DEFAULT_SECRET)
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+
+if not DEBUG and SECRET_KEY == _DEFAULT_SECRET:
+    raise RuntimeError(
+        "SECRET_KEY must be set to a unique value in production (DEBUG=False)."
+    )
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -108,3 +114,14 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "gearloan@example.com")
 
 LATE_FEE_PER_DAY = 10  # dollars
+
+# HTTPS / security headers (active in production; no-ops when DEBUG=True)
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = 0 if DEBUG else 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
