@@ -2,6 +2,7 @@
 .github
 *.md
 *.txt
+!requirements.txt
 .env
 .env.*
 db.sqlite3
