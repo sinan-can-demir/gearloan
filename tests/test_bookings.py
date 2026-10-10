@@ -13,7 +13,7 @@ from apps.bookings.services import (
     request_booking,
     return_booking,
 )
-from apps.courses.models import Course, Enrollment
+from apps.courses.models import Course, Enrollment, Term
 from apps.inventory.models import ItemType, Unit
 
 
@@ -79,7 +79,8 @@ class AcceptanceTests(TestCase):
 
     # 1. Cello student, reserved cello → instant approval
     def test_enrolled_student_reserved_cello_auto_approved(self):
-        course = Course.objects.create(name="Cello I", term="Fall 2026")
+        term = Term.objects.create(name="Fall 2026")
+        course = Course.objects.create(name="Cello I", term=term)
         Enrollment.objects.create(user=self.student, course=course)
         it = ItemType.objects.create(
             name="Cello", tag_prefix="CEL", loan_days=90,

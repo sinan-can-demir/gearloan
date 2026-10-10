@@ -3,7 +3,7 @@ from django.test import TestCase
 from apps.accounts.models import Role, User
 from apps.bookings.models import Booking
 from apps.bookings.rules import can_extend, check_hold, is_eligible_to_request, should_auto_approve
-from apps.courses.models import Course, Enrollment
+from apps.courses.models import Course, Enrollment, Term
 from apps.inventory.models import ItemType, Unit
 
 # ---------------------------------------------------------------------------
@@ -101,7 +101,8 @@ class AutoApproveTest(TestCase):
         self.assertFalse(should_auto_approve(self.faculty, unit))
 
     def test_faculty_blocked_on_reserved_mode(self):
-        course = Course.objects.create(name="Cello I", term="Fall 2026")
+        term = Term.objects.create(name="Fall 2026")
+        course = Course.objects.create(name="Cello I", term=term)
         it = make_item_type(
             approval_mode=ItemType.APPROVAL_AUTO_RESERVED, reserved_course=course
         )
@@ -110,7 +111,8 @@ class AutoApproveTest(TestCase):
 
     # --- AUTO_RESERVED_ONLY (student role) ---
     def test_enrolled_student_auto_approves_reserved_item(self):
-        course = Course.objects.create(name="Cello I", term="Fall 2026")
+        term = Term.objects.create(name="Fall 2026")
+        course = Course.objects.create(name="Cello I", term=term)
         Enrollment.objects.create(user=self.student, course=course)
         it = make_item_type(
             approval_mode=ItemType.APPROVAL_AUTO_RESERVED, reserved_course=course
@@ -119,7 +121,8 @@ class AutoApproveTest(TestCase):
         self.assertTrue(should_auto_approve(self.student, unit))
 
     def test_unenrolled_student_does_not_auto_approve_reserved(self):
-        course = Course.objects.create(name="Cello I", term="Fall 2026")
+        term = Term.objects.create(name="Fall 2026")
+        course = Course.objects.create(name="Cello I", term=term)
         it = make_item_type(
             approval_mode=ItemType.APPROVAL_AUTO_RESERVED, reserved_course=course
         )

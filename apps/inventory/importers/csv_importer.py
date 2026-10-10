@@ -12,7 +12,7 @@ import io
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
-from apps.courses.models import Course
+from apps.courses.models import Course, Term
 from apps.inventory.models import ItemType, Unit
 from apps.inventory.tags import generate_asset_tag
 
@@ -75,8 +75,9 @@ def import_inventory(source) -> InventoryImportResult:
         course_name = row.get("reserved_course_name", "").strip()
         course_term = row.get("reserved_course_term", "").strip()
         if course_name and course_term:
+            term, _ = Term.objects.get_or_create(name=course_term)
             reserved_course, _ = Course.objects.get_or_create(
-                name=course_name, term=course_term
+                name=course_name, term=term
             )
 
         item_type, created = ItemType.objects.update_or_create(
