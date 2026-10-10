@@ -1,81 +1,144 @@
-from datetime import date
+"""
+All booking eligibility and approval logic lives here.
+Views and services call these functions; nothing else decides who can borrow what.
+"""
 
-from apps.accounts.models import User
+from apps.accounts.models import Role, User
 from apps.courses.models import Enrollment
 from apps.inventory.models import ItemType, Unit
 
 
-def _is_allowed_borrower(user: User, item_type: ItemType) -> bool:
-    ab = item_type.allowed_borrowers
-    if ab == ItemType.STUDENTS_ONLY:
-        return user.is_student()
-    if ab == ItemType.FACULTY_ONLY:
-        return user.is_faculty()
-    return True  # BOTH
-
+# ---------------------------------------------------------------------------
+# Auto-approval
+# ---------------------------------------------------------------------------
 
 def should_auto_approve(user: User, unit: Unit) -> bool:
-    """Return True if this booking should be approved without admin review."""
-    if user.is_admin() or user.is_staff:
+    """Return True if this booking may be approved without admin review."""
+    if user.is_staff:
         return True
+
+    role = user.role
+    if role is None or not role.can_borrow:
+        return False
 
     item_type = unit.item_type
 
-    if not _is_allowed_borrower(user, item_type):
+    if item_type.approval_mode == ItemType.APPROVAL_ADMIN:
         return False
 
-    mode = item_type.approval_mode
+    level = role.auto_approve_level
 
-    if mode == ItemType.APPROVAL_ADMIN:
+    if level == Role.AUTO_NONE:
         return False
 
-    if mode == ItemType.APPROVAL_AUTO:
-        # High-value items require admin for faculty even in auto mode
-        if item_type.high_value and user.is_faculty():
-            return False
+    if level == Role.AUTO_ALL:
         return True
 
-    if mode == ItemType.APPROVAL_AUTO_RESERVED:
-        if item_type.reserved_course and user.is_student():
-            return Enrollment.objects.filter(
+    if level == Role.AUTO_STANDARD:
+        # Auto for non-high-value items in AUTO mode only
+        return (
+            item_type.approval_mode == ItemType.APPROVAL_AUTO
+            and not item_type.high_value
+        )
+
+    if level == Role.AUTO_RESERVED_ONLY:
+        # Auto only when enrolled in the item type's reserved course
+        return (
+            item_type.approval_mode == ItemType.APPROVAL_AUTO_RESERVED
+            and item_type.reserved_course is not None
+            and Enrollment.objects.filter(
                 user=user, course=item_type.reserved_course
             ).exists()
-        return False
+        )
 
     return False
 
 
+# ---------------------------------------------------------------------------
+# Hold check
+# ---------------------------------------------------------------------------
+
+def check_hold(user: User, exclude_booking_pk=None) -> tuple[bool, str]:
+    """
+    Return (blocked, reason). blocked=True means the user cannot make a new booking.
+
+    Checks:
+    1. Overdue items (always blocks).
+    2. Role.max_active_loans limit.
+    """
+    from apps.bookings.models import Booking
+
+    overdue = (
+        user.bookings.filter(status=Booking.OVERDUE)
+        .select_related("unit")
+        .first()
+    )
+    if overdue:
+        return (
+            True,
+            f"You have an overdue item: {overdue.unit.asset_tag}. "
+            "Please return it before requesting another.",
+        )
+
+    role = user.role
+    if role is not None and role.max_active_loans is not None:
+        active_qs = user.bookings.filter(
+            status__in=[Booking.REQUESTED, Booking.APPROVED, Booking.CHECKED_OUT]
+        )
+        if exclude_booking_pk:
+            active_qs = active_qs.exclude(pk=exclude_booking_pk)
+        if active_qs.count() >= role.max_active_loans:
+            return (
+                True,
+                f"You have reached the maximum of {role.max_active_loans} "
+                "active loan(s) for your role.",
+            )
+
+    return False, ""
+
+
+# ---------------------------------------------------------------------------
+# Request eligibility
+# ---------------------------------------------------------------------------
+
 def is_eligible_to_request(user: User, unit: Unit) -> tuple[bool, str]:
     """Return (eligible, reason). Reason is empty when eligible."""
+    role = user.role
+    if role is None or not role.can_borrow:
+        return False, "Your account is not permitted to borrow gear."
+
     if not unit.is_available:
         return False, f"{unit.asset_tag} is not currently available."
 
     item_type = unit.item_type
+    if not _is_allowed_role(role, item_type):
+        return False, f"Your role is not permitted to borrow '{item_type.name}'."
 
-    if not _is_allowed_borrower(user, item_type):
-        return False, f"You are not permitted to borrow '{item_type.name}'."
-
+    from apps.bookings.models import Booking
     active_statuses = {Booking.REQUESTED, Booking.APPROVED, Booking.CHECKED_OUT}
     if unit.bookings.filter(status__in=active_statuses).exists():
         return False, f"{unit.asset_tag} is already booked or checked out."
 
-    # Check blackout dates
-    today = date.today()
-    blackout = item_type.blackout_dates.filter(
-        start_date__lte=today, end_date__gte=today
-    ).first() or _global_blackout(today)
-    if blackout:
-        return False, f"Borrowing is blacked out until {blackout.end_date}: {blackout.reason}"
+    blocked, reason = check_hold(user)
+    if blocked:
+        return False, reason
 
     return True, ""
 
 
-def _global_blackout(today: date):
-    from apps.inventory.models import BlackoutDate
-    return BlackoutDate.objects.filter(
-        item_type__isnull=True, start_date__lte=today, end_date__gte=today
-    ).first()
+def _is_allowed_role(role: Role, item_type: ItemType) -> bool:
+    """Check whether *role* is in the item type's allowed_borrowers list."""
+    ab = item_type.allowed_borrowers
+    if ab == ItemType.STUDENTS_ONLY:
+        return role.name == "student"
+    if ab == ItemType.FACULTY_ONLY:
+        return role.name == "faculty"
+    return True  # BOTH
 
+
+# ---------------------------------------------------------------------------
+# Extension eligibility
+# ---------------------------------------------------------------------------
 
 def can_extend(booking) -> tuple[bool, str]:
     """Return (can_extend, reason). Reason is empty when allowed."""
@@ -90,10 +153,8 @@ def can_extend(booking) -> tuple[bool, str]:
         return False, f"'{item_type.name}' does not allow extensions."
 
     if item_type.max_extensions > 0:
-        extensions_used = booking.condition_logs.filter(
-            notes__startswith="Extension"
-        ).count()
-        if extensions_used >= item_type.max_extensions:
+        prior = booking.condition_logs.filter(stage="extension").count()
+        if prior >= item_type.max_extensions:
             return False, "Maximum number of extensions reached."
 
     conflicting = booking.unit.bookings.filter(
@@ -101,10 +162,6 @@ def can_extend(booking) -> tuple[bool, str]:
     ).exclude(pk=booking.pk).exists()
 
     if conflicting:
-        return False, "Another booking is pending for this unit."
+        return False, "Another booking is waiting for this unit."
 
     return True, ""
-
-
-# Avoid circular import — import Booking lazily
-from apps.bookings.models import Booking  # noqa: E402

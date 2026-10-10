@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.utils import timezone
 
@@ -6,6 +8,7 @@ class Booking(models.Model):
     REQUESTED = "requested"
     APPROVED = "approved"
     CHECKED_OUT = "checked_out"
+    READY_FOR_PICKUP = "ready_for_pickup"
     RETURNED = "returned"
     OVERDUE = "overdue"
     CANCELLED = "cancelled"
@@ -13,6 +16,7 @@ class Booking(models.Model):
     STATUS_CHOICES = [
         (REQUESTED, "Requested"),
         (APPROVED, "Approved"),
+        (READY_FOR_PICKUP, "Ready for Pickup"),
         (CHECKED_OUT, "Checked Out"),
         (RETURNED, "Returned"),
         (OVERDUE, "Overdue"),
@@ -26,6 +30,10 @@ class Booking(models.Model):
         "inventory.Unit", on_delete=models.PROTECT, related_name="bookings"
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=REQUESTED)
+    booking_group = models.UUIDField(
+        null=True, blank=True, db_index=True,
+        help_text="Links bookings made together (e.g. kit pieces)"
+    )
     requested_at = models.DateTimeField(default=timezone.now)
     approved_at = models.DateTimeField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
