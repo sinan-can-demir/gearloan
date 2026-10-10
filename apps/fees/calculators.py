@@ -24,11 +24,17 @@ def calculate_late_fee(booking: Booking, as_of: date | None = None) -> Decimal:
 
 
 def apply_late_fee(booking: Booking, as_of: date | None = None) -> Fee | None:
-    """Create and save a late Fee if one is owed. Return the Fee or None."""
+    """Create and save a late Fee if one is owed. Idempotent: returns the existing
+    unpaid late fee without creating a duplicate if called more than once."""
     as_of = as_of or date.today()
     amount = calculate_late_fee(booking, as_of=as_of)
     if amount <= 0:
         return None
+    existing = Fee.objects.filter(
+        booking=booking, type=Fee.LATE, status=Fee.UNPAID
+    ).first()
+    if existing:
+        return existing
     days_late = (as_of - booking.due_date).days
     rate = _late_fee_rate(booking)
     fee = Fee.objects.create(
