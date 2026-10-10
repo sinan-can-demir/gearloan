@@ -1,0 +1,15 @@
+.git
+.github
+*.md
+*.txt
+.env
+.env.*
+db.sqlite3
+staticfiles/
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+tests/
+docs/
+music_gear_booking_data_model.html
