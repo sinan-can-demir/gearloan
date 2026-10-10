@@ -28,11 +28,19 @@ def log_event(event_type: str, actor=None, target=None, details=None, department
         # Best-effort: pull department from actor's most common booking
         pass
 
+    merged_details = details or {}
+    if actor is not None:
+        merged_details = {
+            "actor_username": actor.username,
+            "actor_email": actor.email,
+            **merged_details,
+        }
+
     AuditEvent.objects.create(
         actor=actor,
         event_type=event_type,
         target_type=target_type,
         target_id=target_id,
-        details=details or {},
+        details=merged_details,
         department=department,
     )
