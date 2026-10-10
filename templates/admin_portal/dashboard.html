@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard – GearLoan{% endblock %}
+
+{% block content %}
+<h1>Admin Dashboard</h1>
+<ul>
+  <li><a href="{% url 'admin:index' %}">Django admin</a></li>
+  <li><a href="{% url 'inventory:item_list' %}">View inventory</a></li>
+  <li><a href="{% url 'bookings:booking_list' %}">All bookings</a></li>
+</ul>
+{% endblock %}

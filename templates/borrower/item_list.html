@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Available Gear – GearLoan{% endblock %}
+
+{% block content %}
+<h1>Available Gear</h1>
+{% if item_types %}
+  <ul class="item-list">
+    {% for it in item_types %}
+      <li>
+        <a href="{% url 'inventory:item_detail' it.pk %}">{{ it.name }}</a>
+        — {{ it.loan_days }}-day loan
+        {% if it.high_value %}<span class="badge">High value</span>{% endif %}
+        {% if it.reserved_course %}<span class="badge">Reserved: {{ it.reserved_course.name }}</span>{% endif %}
+        {% if not it.has_available %}<span class="badge badge--unavailable">None available</span>{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No gear is currently in the system.</p>
+{% endif %}
+{% endblock %}

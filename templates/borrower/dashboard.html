@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard – GearLoan{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ user.first_name|default:user.username }}</h1>
+<p><a href="{% url 'inventory:item_list' %}">Browse available gear</a></p>
+<p><a href="{% url 'bookings:booking_list' %}">My bookings</a></p>
+{% endblock %}

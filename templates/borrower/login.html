@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Log in – GearLoan{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <h1>GearLoan</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Log in</button>
+  </form>
+</div>
+{% endblock %}

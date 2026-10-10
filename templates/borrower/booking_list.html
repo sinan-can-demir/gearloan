@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Bookings – GearLoan{% endblock %}
+
+{% block content %}
+<h1>My Bookings</h1>
+{% if bookings %}
+  <table>
+    <thead>
+      <tr><th>Item</th><th>Asset tag</th><th>Status</th><th>Due date</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for booking in bookings %}
+        <tr>
+          <td>{{ booking.unit.item_type.name }}</td>
+          <td>{{ booking.unit.asset_tag }}</td>
+          <td>{{ booking.get_status_display }}</td>
+          <td>{{ booking.due_date|default:"—" }}</td>
+          <td>
+            {% if booking.status == "requested" or booking.status == "approved" %}
+              <form method="post" action="{% url 'bookings:cancel' booking.pk %}" style="display:inline">
+                {% csrf_token %}
+                <button type="submit">Cancel</button>
+              </form>
+            {% endif %}
+            {% if booking.status == "checked_out" %}
+              <form method="post" action="{% url 'bookings:extend' booking.pk %}" style="display:inline">
+                {% csrf_token %}
+                <button type="submit">Extend</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>You have no bookings yet. <a href="{% url 'inventory:item_list' %}">Browse gear.</a></p>
+{% endif %}
+{% endblock %}

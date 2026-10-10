@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ item_type.name }} – GearLoan{% endblock %}
+
+{% block content %}
+<h1>{{ item_type.name }}</h1>
+{% if item_type.description %}<p>{{ item_type.description }}</p>{% endif %}
+<dl>
+  <dt>Loan length</dt><dd>{{ item_type.loan_days }} days</dd>
+  {% if item_type.reserved_course %}<dt>Reserved for</dt><dd>{{ item_type.reserved_course }}</dd>{% endif %}
+  {% if item_type.high_value %}<dt>Note</dt><dd>Admin approval required (high-value item)</dd>{% endif %}
+</dl>
+
+{% if available_units %}
+  <h2>Available units</h2>
+  <ul>
+    {% for unit in available_units %}
+      <li>
+        {{ unit.asset_tag }}
+        <form method="post" action="{% url 'bookings:request' unit.pk %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit">Request</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No units are currently available.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}GearLoan{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <nav class="navbar">
+    <a class="navbar-brand" href="{% url 'inventory:item_list' %}">GearLoan</a>
+    {% if user.is_authenticated %}
+      <span class="nav-user">{{ user.get_full_name|default:user.username }} ({{ user.role }})</span>
+      <a href="{% url 'bookings:booking_list' %}">My Bookings</a>
+      {% if user.is_staff or user.is_admin %}
+        <a href="{% url 'admin:index' %}">Admin</a>
+      {% endif %}
+      <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
+        {% csrf_token %}
+        <button type="submit">Log out</button>
+      </form>
+    {% else %}
+      <a href="{% url 'accounts:login' %}">Log in</a>
+    {% endif %}
+  </nav>
+
+  {% load static %}
+  <main class="container">
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="message message--{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
