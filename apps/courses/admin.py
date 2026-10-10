@@ -1,12 +1,19 @@
 from django.contrib import admin
 
-from .models import Course, Enrollment
+from .models import Course, Enrollment, Term
+
+
+@admin.register(Term)
+class TermAdmin(admin.ModelAdmin):
+    list_display = ["name", "start_date", "end_date", "active", "department"]
+    list_filter = ["active", "department"]
+    list_editable = ["active"]
 
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ["name", "term", "enrollment_count"]
-    list_filter = ["term"]
+    list_display = ["name", "term", "term_label", "department", "enrollment_count"]
+    list_filter = ["term", "department"]
     search_fields = ["name"]
 
     def enrollment_count(self, obj):
