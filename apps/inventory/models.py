@@ -30,17 +30,12 @@ class ItemType(models.Model):
     ]
 
     name = models.CharField(max_length=200)
-    tag_prefix = models.CharField(
-        max_length=10, help_text='Prefix for asset tags, e.g. "CEL" → CEL-001'
-    )
-    loan_days = models.PositiveIntegerField(default=7, help_text="Default loan length in days")
+    tag_prefix = models.CharField(max_length=10)
+    loan_days = models.PositiveIntegerField(default=7)
     replacement_cost = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True,
-        help_text="Cap for damage charges"
+        max_digits=10, decimal_places=2, null=True, blank=True
     )
-    high_value = models.BooleanField(
-        default=False, help_text="Faculty need admin approval for high-value items"
-    )
+    high_value = models.BooleanField(default=False)
     reserved_course = models.ForeignKey(
         "courses.Course",
         null=True,
@@ -58,11 +53,20 @@ class ItemType(models.Model):
         choices=MAX_EXTENSIONS_CHOICES, default=MAX_EXT_UNLIMITED
     )
     late_fee_per_day = models.DecimalField(
-        max_digits=6, decimal_places=2, null=True, blank=True,
-        help_text="Overrides the global $10/day when set"
+        max_digits=6, decimal_places=2, null=True, blank=True
     )
     category = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
+    maintenance_interval_days = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Days between scheduled upkeep (deferred)"
+    )
+    department = models.ForeignKey(
+        "departments.Department",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="item_types",
+    )
 
     class Meta:
         ordering = ["category", "name"]
@@ -75,19 +79,32 @@ class Unit(models.Model):
     AVAILABLE = "available"
     CHECKED_OUT = "checked_out"
     IN_REPAIR = "in_repair"
+    SCHEDULED_MAINTENANCE = "scheduled_maintenance"
+    LOST_PENDING = "lost_pending"
+    LOST = "lost"
     RETIRED = "retired"
 
     STATUS_CHOICES = [
         (AVAILABLE, "Available"),
         (CHECKED_OUT, "Checked Out"),
         (IN_REPAIR, "In Repair"),
+        (SCHEDULED_MAINTENANCE, "Scheduled Maintenance"),
+        (LOST_PENDING, "Lost – Pending Verification"),
+        (LOST, "Lost"),
         (RETIRED, "Retired"),
     ]
 
     asset_tag = models.CharField(max_length=20, unique=True, db_index=True)
     item_type = models.ForeignKey(ItemType, on_delete=models.PROTECT, related_name="units")
-    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default=AVAILABLE)
-    notes = models.TextField(blank=True, help_text="Serial number, purchase date, etc.")
+    status = models.CharField(max_length=25, choices=STATUS_CHOICES, default=AVAILABLE)
+    notes = models.TextField(blank=True)
+    department = models.ForeignKey(
+        "departments.Department",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="units",
+    )
 
     class Meta:
         ordering = ["asset_tag"]
@@ -98,27 +115,3 @@ class Unit(models.Model):
     @property
     def is_available(self):
         return self.status == self.AVAILABLE
-
-
-class BlackoutDate(models.Model):
-    start_date = models.DateField()
-    end_date = models.DateField()
-    reason = models.CharField(max_length=200, blank=True)
-    item_type = models.ForeignKey(
-        ItemType,
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name="blackout_dates",
-        help_text="Leave blank to apply to all gear",
-    )
-
-    class Meta:
-        ordering = ["start_date"]
-
-    def __str__(self):
-        scope = self.item_type.name if self.item_type else "All gear"
-        return f"{scope}: {self.start_date} – {self.end_date}"
-
-    def covers(self, date):
-        return self.start_date <= date <= self.end_date
