@@ -12,6 +12,35 @@ def _send(subject, body, to):
     )
 
 
+def send_booking_rejected(booking, reason=""):
+    _send(
+        subject=f"[GearLoan] Booking not approved: {booking.item_type.name}",
+        body=(
+            f"Hi {booking.user.first_name or booking.user.username},\n\n"
+            f'Your request for "{booking.item_type.name}" ({booking.unit.asset_tag}) '
+            f"was not approved."
+            + (f"\n\nReason: {reason}" if reason else "")
+            + "\n\nPlease contact the equipment desk if you have questions.\n\n— GearLoan"
+        ),
+        to=booking.user.email,
+    )
+
+
+def send_fee_status_changed(fee):
+    _send(
+        subject=f"[GearLoan] Fee update: {fee.get_type_display()}",
+        body=(
+            f"Hi {fee.booking.user.first_name or fee.booking.user.username},\n\n"
+            f"A fee on your booking for "
+            f'"{fee.booking.item_type.name}" ({fee.booking.unit.asset_tag}) '
+            f"has been updated to: {fee.get_status_display()}.\n\n"
+            + (f"Note: {fee.waiver_reason}\n\n" if fee.waiver_reason else "")
+            + "— GearLoan"
+        ),
+        to=fee.booking.user.email,
+    )
+
+
 def send_booking_requested(booking):
     item_name = booking.item_type.name
     _send(
