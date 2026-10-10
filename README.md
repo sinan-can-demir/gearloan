@@ -6,7 +6,7 @@ Open source equipment booking for college music departments. Track instruments a
 
 ## Status
 
-v1 is feature-complete and has a passing test suite (66 tests). Migrations are committed; the app installs from a clean checkout. See [V1_PLAN.md](V1_PLAN.md) for what is in scope and what is deferred.
+**v1.0.0 released 2026-10-10.** 76 tests pass. Docker image published to ghcr.io. See [V1_PLAN.md](V1_PLAN.md) for what is in scope and what is deferred.
 
 **What works:** inventory management, booking requests and approval, check-out/check-in with condition logs, late fees, CSV roster import, email notifications, audit log.
 
@@ -81,9 +81,18 @@ Booking statuses: requested, approved, checked_out, returned, overdue, cancelled
 - Python and Django (logins, admin interface, ORM, and email come built in)
 - SQLite for local development, PostgreSQL for production
 - Docker and docker-compose for one-command installs
-- GitHub Actions CI on every push
+- GitHub Actions CI on every push and release pipeline on every `v*.*.*` tag
+- Docker image published to `ghcr.io/sinan-can-demir/gearloan`
 
 ## Quick start (Docker)
+
+Pull the published image (no build required):
+
+```bash
+docker pull ghcr.io/sinan-can-demir/gearloan:latest
+```
+
+Or build from source:
 
 ```bash
 git clone https://github.com/sinan-can-demir/gearloan.git
