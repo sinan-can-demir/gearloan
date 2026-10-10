@@ -1,0 +1,74 @@
+gearloan/
+├── README.md
+├── LICENSE
+├── CONTRIBUTING.md
+├── .env.example
+├── .gitignore
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── manage.py
+│
+├── config/                      # Django project settings
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── wsgi.py
+│   └── asgi.py
+│
+├── apps/
+│   ├── accounts/                # users and roles
+│   │   ├── models.py            # User (student, faculty, admin)
+│   │   ├── admin.py
+│   │   ├── views.py
+│   │   └── urls.py
+│   │
+│   ├── courses/                 # courses and enrollments
+│   │   ├── models.py            # Course, Enrollment
+│   │   ├── admin.py
+│   │   └── importers/
+│   │       ├── base.py          # roster importer interface
+│   │       └── csv_importer.py  # CSV roster import
+│   │
+│   ├── inventory/               # items and reservations
+│   │   ├── models.py            # Item
+│   │   ├── admin.py
+│   │   ├── views.py
+│   │   └── urls.py
+│   │
+│   ├── bookings/                # requests, approvals, extensions
+│   │   ├── models.py            # Booking, ConditionLog
+│   │   ├── rules.py             # auto-approval and eligibility rules
+│   │   ├── services.py          # request, approve, extend, return
+│   │   ├── admin.py
+│   │   ├── views.py
+│   │   └── urls.py
+│   │
+│   ├── fees/                    # late fees and damage charges
+│   │   ├── models.py            # Fee
+│   │   ├── calculators.py       # $10/day late fee, damage charge
+│   │   └── admin.py
+│   │
+│   └── notifications/           # email
+│       ├── emails.py
+│       ├── tasks.py             # due-date reminders, overdue notices
+│       └── templates/
+│           └── notifications/
+│
+├── templates/
+│   ├── base.html
+│   ├── borrower/                # borrower interface
+│   └── admin_portal/            # admin interface
+│
+├── static/
+│
+├── tests/
+│   ├── test_rules.py
+│   ├── test_fees.py
+│   ├── test_roster_import.py
+│   └── test_bookings.py
+│
+└── docs/
+    ├── installing.md
+    ├── roster-import.md
+    └── admin-guide.md
