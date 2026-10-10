@@ -14,9 +14,6 @@ from apps.inventory.models import ItemType, Unit
 
 def should_auto_approve(user: User, unit: Unit) -> bool:
     """Return True if this booking may be approved without admin review."""
-    if user.is_staff:
-        return True
-
     role = user.role
     if role is None or not role.can_borrow:
         return False
@@ -153,8 +150,7 @@ def can_extend(booking) -> tuple[bool, str]:
         return False, f"'{item_type.name}' does not allow extensions."
 
     if item_type.max_extensions > 0:
-        prior = booking.condition_logs.filter(stage="extension").count()
-        if prior >= item_type.max_extensions:
+        if booking.extension_count >= item_type.max_extensions:
             return False, "Maximum number of extensions reached."
 
     conflicting = booking.unit.bookings.filter(

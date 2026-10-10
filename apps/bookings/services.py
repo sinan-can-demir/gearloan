@@ -1,5 +1,7 @@
+import logging
 from datetime import date, timedelta
 
+from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -9,15 +11,21 @@ from apps.notifications import emails
 from .models import Booking, ConditionLog
 from .rules import can_extend, is_eligible_to_request, should_auto_approve
 
+logger = logging.getLogger(__name__)
+
 
 def request_booking(user: User, unit: Unit, booking_group=None) -> Booking:
     eligible, reason = is_eligible_to_request(user, unit)
     if not eligible:
         raise ValueError(reason)
 
-    booking = Booking.objects.create(
-        user=user, unit=unit, booking_group=booking_group
-    )
+    with transaction.atomic():
+        locked_unit = Unit.objects.select_for_update().get(pk=unit.pk)
+        if not locked_unit.is_available:
+            raise ValueError(f"{unit.asset_tag} is not currently available.")
+        booking = Booking.objects.create(
+            user=user, unit=locked_unit, booking_group=booking_group
+        )
 
     if should_auto_approve(user, unit):
         _approve(booking, approved_by=None)
@@ -29,6 +37,8 @@ def request_booking(user: User, unit: Unit, booking_group=None) -> Booking:
 
 
 def approve_booking(booking: Booking, admin_user: User) -> Booking:
+    if not (admin_user.is_staff or (admin_user.role and admin_user.role.can_approve)):
+        raise PermissionError("You do not have permission to approve bookings.")
     if booking.status != Booking.REQUESTED:
         raise ValueError("Only requested bookings can be approved.")
     _audit("booking_approved", actor=admin_user, target=booking)
@@ -36,6 +46,8 @@ def approve_booking(booking: Booking, admin_user: User) -> Booking:
 
 
 def reject_booking(booking: Booking, admin_user: User, reason: str = "") -> Booking:
+    if not (admin_user.is_staff or (admin_user.role and admin_user.role.can_approve)):
+        raise PermissionError("You do not have permission to reject bookings.")
     if booking.status != Booking.REQUESTED:
         raise ValueError("Only requested bookings can be rejected.")
     booking.status = Booking.CANCELLED
@@ -59,6 +71,8 @@ def _approve(booking: Booking, approved_by) -> Booking:
 def checkout_booking(
     booking: Booking, staff_user: User, condition_notes: str
 ) -> Booking:
+    if not (staff_user.is_staff or (staff_user.role and staff_user.role.can_check_in_out)):
+        raise PermissionError("You do not have permission to check out gear.")
     if not condition_notes.strip():
         raise ValueError("A condition note is required at check-out.")
     if booking.status != Booking.APPROVED:
@@ -87,6 +101,8 @@ def checkout_booking(
 def return_booking(
     booking: Booking, staff_user: User, condition_notes: str
 ) -> Booking:
+    if not (staff_user.is_staff or (staff_user.role and staff_user.role.can_check_in_out)):
+        raise PermissionError("You do not have permission to check in gear.")
     if not condition_notes.strip():
         raise ValueError("A condition note is required at check-in.")
     if booking.status not in (Booking.CHECKED_OUT, Booking.OVERDUE):
@@ -117,7 +133,8 @@ def extend_booking(booking: Booking) -> Booking:
         raise ValueError(reason)
 
     booking.due_date = booking.due_date + timedelta(days=booking.item_type.loan_days)
-    booking.save(update_fields=["due_date"])
+    booking.extension_count += 1
+    booking.save(update_fields=["due_date", "extension_count"])
     emails.send_extension_confirmation(booking)
     _audit("booking_extended", actor=booking.user, target=booking)
     return booking
@@ -138,4 +155,4 @@ def _audit(event_type, actor=None, target=None, details=None):
         from apps.audit.logger import log_event
         log_event(event_type, actor=actor, target=target, details=details)
     except Exception:
-        pass
+        logger.exception("Audit log failed for event %r", event_type)

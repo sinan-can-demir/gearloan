@@ -47,6 +47,7 @@ class Booking(models.Model):
         related_name="approved_bookings",
     )
     notes = models.TextField(blank=True)
+    extension_count = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         ordering = ["-requested_at"]
