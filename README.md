@@ -12,6 +12,16 @@ Open source equipment booking for college music departments. Track instruments a
 
 **Deferred:** waitlist, kit bundles, QR/barcode lookup, photo uploads, reports, multi-department UI, rollover.
 
+## Screenshots
+
+| Login | Browse gear |
+|-------|-------------|
+| ![Login page](docs/screenshots/1-login.png) | ![Browse gear](docs/screenshots/2-browse-gear.png) |
+
+| My Bookings | Admin — pending requests |
+|-------------|--------------------------|
+| ![My Bookings](docs/screenshots/3-my-bookings.png) | ![Admin pending](docs/screenshots/4-admin-pending.png) |
+
 ## Features
 
 - Two interfaces: borrower and admin

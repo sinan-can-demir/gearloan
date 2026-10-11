@@ -11,9 +11,9 @@
       <li>
         <a href="{% url 'inventory:item_detail' it.pk %}">{{ it.name }}</a>
         — {{ it.loan_days }}-day loan
-        {% if it.high_value %}<span class="badge">High value</span>{% endif %}
-        {% if it.reserved_course %}<span class="badge">Reserved: {{ it.reserved_course.name }}</span>{% endif %}
-        {% if not it.has_available %}<span class="badge badge--unavailable">None available</span>{% endif %}
+        {% if it.high_value %}<span class="badge badge--highvalue">High value</span>{% endif %}
+        {% if it.reserved_course %}<span class="badge badge--reserved">Reserved: {{ it.reserved_course.name }}</span>{% endif %}
+        {% if not it.has_available %}<span class="badge" style="background:#f3f4f6;color:#6b7280">None available</span>{% endif %}
       </li>
     {% endfor %}
   </ul>

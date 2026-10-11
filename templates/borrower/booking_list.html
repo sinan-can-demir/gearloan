@@ -15,19 +15,19 @@
         <tr>
           <td>{{ booking.unit.item_type.name }}</td>
           <td>{{ booking.unit.asset_tag }}</td>
-          <td>{{ booking.get_status_display }}</td>
+          <td><span class="status status-{{ booking.status }}">{{ booking.get_status_display }}</span></td>
           <td>{{ booking.due_date|default:"—" }}</td>
           <td>
             {% if booking.status == "requested" or booking.status == "approved" %}
               <form method="post" action="{% url 'bookings:cancel' booking.pk %}" style="display:inline">
                 {% csrf_token %}
-                <button type="submit">Cancel</button>
+                <button type="submit" class="btn btn-secondary">Cancel</button>
               </form>
             {% endif %}
             {% if booking.status == "checked_out" %}
               <form method="post" action="{% url 'bookings:extend' booking.pk %}" style="display:inline">
                 {% csrf_token %}
-                <button type="submit">Extend</button>
+                <button type="submit" class="btn btn-primary">Extend</button>
               </form>
             {% endif %}
           </td>
